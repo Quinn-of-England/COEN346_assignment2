@@ -9,8 +9,10 @@ import java.util.Scanner;
 public class assignment2 {
 
     public static void main(String[] args){
-        int[] process= null;
-        if (args.length != 1) { // Checks if arg is present, will exit if not correct (file name/path passed from args[0])
+        int[] processes= null;
+        int[] readytime= null; //time of arrival/ready time (1st column)
+        int[] exectime= null; //required execution time (2nd column)
+        if (args.length != 1) { // Checks if arg is present, will exit if not correct (file name/path passed from args[0]) 
             System.err.println("You must pass the input file name");
             System.exit(0);
         }
@@ -37,4 +39,64 @@ public class assignment2 {
         s.close();
         return inputs;
     }
+    // Method to find the waiting time for all 
+    // processes 
+    static void findWaitingTime(int processes[], int n, 
+                 int exect[], int wt[], int quantum) 
+    { 
+        // Make a copy of burst times bt[] to store remaining 
+        // burst times. 
+        int rem_exect[] = new int[n]; 
+        for (int i = 0 ; i < n ; i++) 
+            rem_exect[i] =  exect[i]; 
+       
+        int t = 0; // Current time 
+       
+        // Keep traversing processes in round robin manner 
+        while(true) 
+        { 
+            boolean done = true; 
+       
+            // Traverse all processes one by one repeatedly 
+            for (int i = 0 ; i < n; i++) 
+            { 
+                // If execution time of a process is greater than 0 
+                // then they need to be processed
+                if (rem_exect[i] > 0) 
+                { 
+                    done = false; // There is a pending process 
+       
+                    if (rem_exect[i] > quantum) 
+                    { 
+                        // Increase the value of t i.e. shows 
+                        // how much time a process has been processed 
+                        t += quantum; 
+       
+                        // Decrease the exec_time of current process 
+                        // by quantum 
+                        rem_exect[i] -= quantum; 
+                    } 
+       
+                    else
+                    { 
+                        // Increase the value of t i.e. shows 
+                        // how much time a process has been processed 
+                        t = t + rem_exect[i]; 
+       
+                        // Waiting time is current time minus time 
+                        // used by this process 
+                        wt[i] = t - exect[i]; 
+       
+                        // As the process gets fully executed 
+                        // make its remaining execution time = 0 
+                        rem_exect[i] = 0; 
+                    } 
+                } 
+            } 
+        
+            if (done == true) 
+              break; 
+        } 
+    } 
 }
+    
