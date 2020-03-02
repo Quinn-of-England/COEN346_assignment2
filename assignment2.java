@@ -19,7 +19,8 @@ public class assignment2 {
         try { // Reads file using provided file name
             String fileName = args[0];
             File input = new File(fileName);
-            process = ReadInput(fileName, input);
+            processes = ReadInput(fileName, input);
+            int n = processes.length;
         }
         catch(Exception e) { // If file cannot be opened
             System.err.println("No file found");
