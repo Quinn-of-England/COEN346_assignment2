@@ -11,7 +11,7 @@ public class assignment2 {
     public static void main(String[] args){
         int[] processes= null;
         int[] readytime= null; //time of arrival/ready time (1st column)
-        int[] exectime= null; //required execution time (2nd column)
+        int[] exect= null; //required execution time (2nd column)
         if (args.length != 1) { // Checks if arg is present, will exit if not correct (file name/path passed from args[0]) 
             System.err.println("You must pass the input file name");
             System.exit(0);
@@ -24,35 +24,35 @@ public class assignment2 {
         catch(Exception e) { // If file cannot be opened
             System.err.println("No file found");
         }
-        
+        findWaitingTime(processes, n, exect, wt, quantum);
 
     }
-    public static int[] ReadInput(String fileName, File file) throws Exception {
-        Scanner s = new Scanner(file); // Reads first entry for # of inputs
-        int inputNum = Integer.parseInt(s.nextLine());
-        int[] inputs = new int[inputNum];
-        int linecount = 0;
-        while (s.hasNextLine()) { // Reads all inputs and stores it into an array
-            inputs[linecount] = Integer.parseInt(s.nextLine());
-            linecount++;
-        }
-        s.close();
-        return inputs;
-    }
-    // Method to find the waiting time for all 
-    // processes 
+    // public static int[] ReadInput(String fileName, File file) throws Exception {
+    //     Scanner s = new Scanner(file); // Reads first entry for # of inputs
+    //     int inputNum = Integer.parseInt(s.nextLine());
+    //     int[] inputs = new int[inputNum];
+    //     int linecount = 0;
+    //     while (s.hasNextLine()) { // Reads all inputs and stores it into an array
+    //         inputs[linecount] = Integer.parseInt(s.nextLine());
+    //         linecount++;
+    //     }
+    //     s.close();
+    //     return inputs;
+    // }
+
+    // waiting time method
     static void findWaitingTime(int processes[], int n, 
                  int exect[], int wt[], int quantum) 
     { 
-        // Make a copy of burst times bt[] to store remaining 
-        // burst times. 
+        // copy of exec time to store remaining exec times exect[]
         int rem_exect[] = new int[n]; 
         for (int i = 0 ; i < n ; i++) 
             rem_exect[i] =  exect[i]; 
-       
+            quantum = rem_exect[i]/10;
+
         int t = 0; // Current time 
        
-        // Keep traversing processes in round robin manner 
+        //round robin 
         while(true) 
         { 
             boolean done = true; 
