@@ -25,7 +25,7 @@ public class assignment2 {
         catch(Exception e) { // If file cannot be opened
             System.err.println("No file found");
         }
-        printFunction(processes, n, exect, wt, quantum);
+        printFunction(processes, n, exect, quantum);
 
     }
     // public static int[] ReadInput(String fileName, File file) throws Exception {
