@@ -25,7 +25,7 @@ public class assignment2 {
         catch(Exception e) { // If file cannot be opened
             System.err.println("No file found");
         }
-        findWaitingTime(processes, n, exect, wt, quantum);
+        printFunction(processes, n, exect, wt, quantum);
 
     }
     // public static int[] ReadInput(String fileName, File file) throws Exception {
@@ -98,6 +98,26 @@ public class assignment2 {
             if (done == true) 
               break; 
         } 
+    } 
+    static void printFunction(int processes[], int n, int exect[], 
+                                         int quantum) 
+    { 
+        int wt[] = new int[n]; 
+        int total_wt = 0; 
+       
+        // Function to find waiting time of all processes 
+        findWaitingTime(processes, n, bt, wt, quantum); 
+       
+       
+        // Calculate total waiting time
+        for (int i=0; i<n; i++) 
+        { 
+            total_wt = total_wt + wt[i]; 
+            System.out.println("Time " + (i+1) + ", Process " + exect[i] + ", " + wt[i] + "/t"); //Need to add resume, pause, started, finished
+        } 
+        System.out.println("--------------------------------------" + "\t");
+        System.out.println("Waiting time : " + "\t" +
+        "Process " + (i+1) + ": " + wt[i] + "/t");
     } 
 }
     
