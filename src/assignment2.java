@@ -59,7 +59,7 @@ class Assignment2 {
         private float waitingTime = 0;
         private float remainingTime;
         private float timeStart;
-        private float timeNow;
+        private float time;
         private volatile Boolean hasCPU = false;
         private Boolean isFinished = false;
         private float quantum;
@@ -76,21 +76,13 @@ class Assignment2 {
         public void run() {
             while (true) {
                 while (!hasCPU) Thread.onSpinWait();
-                if (remainingTime < quantum) {
-                    timeToRun = remainingTime;
-                }
-                else timeToRun = quantum;
-                try {
-                    TimeUnit.MILLISECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                timeNow += timeToRun;
+                timeToRun = Math.min(remainingTime, quantum);
+                time += timeToRun;
                 remainingTime -= timeToRun;
                 runTime += timeToRun;
                 hasCPU = false;
                 if (remainingTime <= 0) {
-                    waitingTime = (timeNow - runTime - timeStart);
+                    waitingTime = (time - runTime - timeStart);
                     isFinished = true;
                 }
             }
@@ -112,8 +104,12 @@ class Assignment2 {
             return arrivalTime;
         }
 
-        public float getTimeNow() {
-            return timeNow;
+        public float getTime() {
+            return time;
+        }
+
+        public float getTimeToRun() {
+            return timeToRun;
         }
 
         public Boolean getHasCPU() {
@@ -128,8 +124,8 @@ class Assignment2 {
             this.timeStart = timeStart;
         }
 
-        public void setTimeNow(float timeNow) {
-            this.timeNow = timeNow;
+        public void setTime(float time) {
+            this.time = time;
         }
 
         public void setQuantum(float quantum) {
@@ -162,7 +158,7 @@ class Assignment2 {
 
         @Override
         public void run() {
-            runningProcess = 2;
+            runningProcess = 0;
             Thread pThread = new Thread(processes[runningProcess]);
             runProcess(pThread);
         }
@@ -174,11 +170,12 @@ class Assignment2 {
             System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Started");
             while (true) {
                 pThread.resume();
+                processes[runningProcess].setTime(time);
                 System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Resumed");
                 processes[runningProcess].setHasCPU(true);
                 while (processes[runningProcess].getHasCPU()) Thread.onSpinWait();
                 pThread.suspend();
-                time = processes[runningProcess].getTimeNow();
+                time += processes[runningProcess].getTimeToRun();
                 System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Paused");
                 if (processes[runningProcess].getFinished()) {
                     System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Finished");
