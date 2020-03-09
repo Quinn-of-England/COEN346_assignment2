@@ -82,7 +82,7 @@ class Assignment2 {
                 runTime += quantum;
                 hasCPU = false;
                 if (remainingTime <= 0) {
-                    waitingTime = (timeNow - runTime + remainingTime);
+i                    waitingTime = (timeNow - runTime);
                     isFinished = true;
                 }
             }
@@ -122,8 +122,8 @@ class Assignment2 {
         private Process[] processes;
         private int processNum;
         private float totalRemainingTime;
-        private float time = 1;
-        private float quantum = (float) 0.75;
+        private float time = 0;
+        private float quantum = (float) 1;
 
         Scheduler(Process[] processes, int processNum) {
             this.processes = processes;
@@ -151,9 +151,9 @@ class Assignment2 {
                 pThread.resume();
                 System.out.println("Time " + time + ", Process " + 0 + ", Resumed");
                 processes[0].setQuantum(quantum);
-                processes[0].setTimeNow(time);
                 processes[0].setHasCPU(true);
                 time += quantum;
+                processes[0].setTimeNow(time);
                 try {
                     TimeUnit.MILLISECONDS.sleep(1);
                 } catch (InterruptedException e) {
@@ -162,7 +162,7 @@ class Assignment2 {
                 pThread.suspend();
                 System.out.println("Time " + time + ", Process " + 0 + ", Paused");
                 if (processes[0].getFinished()) {
-                    System.out.println("Time " + time + ", Process " + 0 + ", Finished");
+                    //System.out.println("Time " + time + ", Process " + 0 + ", Finished");
                     System.out.println("Waiting Time 0: " + processes[0].getWaitingTime());
                     pThread.stop();
                     break;
