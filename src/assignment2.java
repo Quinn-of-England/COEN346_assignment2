@@ -54,16 +54,16 @@ class Assignment2 {
 }
 
     class Process implements Runnable {
-        int arrivalTime;
-        int burstTime;
-        int waitingTime = 0;
-        float remainingTime;
-        int timeStart;
-        int timeNow;
-        volatile Boolean hasCPU = false;
-        Boolean isFinished = false;
-        float quantum;
-        float runTime = 0;
+        private int arrivalTime;
+        private int burstTime;
+        private float waitingTime = 0;
+        private float remainingTime;
+        private float timeStart;
+        private float timeNow;
+        private volatile Boolean hasCPU = false;
+        private Boolean isFinished = false;
+        private float quantum;
+        private float runTime = 0;
 
         Process(int arrivalTime, int burstTime) {
             this.arrivalTime = arrivalTime;
@@ -74,19 +74,15 @@ class Assignment2 {
         //@Override
         public void run() {
             while (true) {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 while (!hasCPU) {
                     Thread.onSpinWait();
-                    System.out.println("Waiting");
+                    //System.out.println("Waiting");
                 }
                 remainingTime -= quantum;
                 runTime += quantum;
-                if (remainingTime < quantum) {
-                    waitingTime = (int) (timeNow - timeStart - runTime + 1);
+                hasCPU = false;
+                if (remainingTime <= 0) {
+                    waitingTime = (timeNow - runTime + remainingTime);
                     isFinished = true;
                 }
             }
@@ -96,23 +92,23 @@ class Assignment2 {
             return isFinished;
         }
 
-        public int getWaitingTime() {
+        public float getWaitingTime() {
             return waitingTime;
         }
 
-        public float getRunTime() {
-            return runTime;
+        public int getBurstTime() {
+            return burstTime;
         }
 
         public void setHasCPU(Boolean hasCPU) {
             this.hasCPU = hasCPU;
         }
 
-        public void setTimeStart(int timeStart) {
+        public void setTimeStart(float timeStart) {
             this.timeStart = timeStart;
         }
 
-        public void setTimeNow(int timeNow) {
+        public void setTimeNow(float timeNow) {
             this.timeNow = timeNow;
         }
 
@@ -123,18 +119,18 @@ class Assignment2 {
 
     class Scheduler implements Runnable {
 
-        Process[] processes;
-        int processNum;
-        float totalRemainingTime;
-        int time = 1;
-        float quantum = (float) 1;
+        private Process[] processes;
+        private int processNum;
+        private float totalRemainingTime;
+        private float time = 1;
+        private float quantum = (float) 0.75;
 
         Scheduler(Process[] processes, int processNum) {
             this.processes = processes;
             this.processNum = processNum;
 
             for (int i = 0; i < processNum; i++) {
-                totalRemainingTime += processes[i].burstTime;
+                totalRemainingTime += processes[i].getBurstTime();
             }
 
             //quantum = totalRemainingTime / 10;
@@ -157,13 +153,12 @@ class Assignment2 {
                 processes[0].setQuantum(quantum);
                 processes[0].setTimeNow(time);
                 processes[0].setHasCPU(true);
+                time += quantum;
                 try {
-                    TimeUnit.MILLISECONDS.sleep(10);
+                    TimeUnit.MILLISECONDS.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                time += 1;
-                processes[0].setHasCPU(false);
                 pThread.suspend();
                 System.out.println("Time " + time + ", Process " + 0 + ", Paused");
                 if (processes[0].getFinished()) {
