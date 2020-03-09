@@ -3,9 +3,10 @@
  * Quinn Hogg - 40093086
  */
 import java.io.*;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 
 class Assignment2 {
 
@@ -33,7 +34,6 @@ class Assignment2 {
         Scheduler taskScheduler = new Scheduler(processes, processNum);
         Thread schedulerThread = new Thread(taskScheduler);
         schedulerThread.start();
-        //printFunction(processes, n, exect, quantum);
     }
 
     public static ArrayList<String> readInput(String fileName) {
@@ -71,18 +71,20 @@ class Assignment2 {
             this.remainingTime = burstTime;
         }
 
-        //@Override
+        @Override
         public void run() {
             while (true) {
-                while (!hasCPU) {
-                    Thread.onSpinWait();
-                    //System.out.println("Waiting");
-                }
+                while (!hasCPU) Thread.onSpinWait();
                 remainingTime -= quantum;
                 runTime += quantum;
                 hasCPU = false;
                 if (remainingTime <= 0) {
-                    waitingTime = (timeNow - runTime);
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(2);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    waitingTime = (timeNow - runTime - timeStart);
                     isFinished = true;
                 }
             }
@@ -98,6 +100,10 @@ class Assignment2 {
 
         public int getBurstTime() {
             return burstTime;
+        }
+
+        public int getArrivalTime() {
+            return arrivalTime;
         }
 
         public void setHasCPU(Boolean hasCPU) {
@@ -123,7 +129,9 @@ class Assignment2 {
         private int processNum;
         private float totalRemainingTime;
         private float time = 0;
-        private float quantum = (float) 1.0;
+        private float quantum;
+
+        private static DecimalFormat df = new DecimalFormat("0.00");
 
         Scheduler(Process[] processes, int processNum) {
             this.processes = processes;
@@ -133,13 +141,14 @@ class Assignment2 {
                 totalRemainingTime += processes[i].getBurstTime();
             }
 
-            //quantum = totalRemainingTime / 10;
+            quantum = totalRemainingTime / 10;
             System.out.println("Quantum: " + quantum);
         }
 
-        //@Override
+        @Override
         public void run() {
             Thread pThread = new Thread(processes[0]);
+            time += 5.12;
             runProcess(pThread);
         }
 
@@ -155,15 +164,15 @@ class Assignment2 {
                 time += quantum;
                 processes[0].setTimeNow(time);
                 try {
-                    TimeUnit.MILLISECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(5);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 pThread.suspend();
-                System.out.println("Time " + time + ", Process " + 0 + ", Paused");
+                System.out.println("Time " + df.format(time) + ", Process " + 0 + ", Paused");
                 if (processes[0].getFinished()) {
-                    System.out.println("Time " + time + ", Process " + 0 + ", Finished");
-                    System.out.println("Waiting Time 0: " + processes[0].getWaitingTime());
+                    System.out.println("Time " + df.format(time) + ", Process " + 0 + ", Finished");
+                    System.out.println("Waiting Time, Process " + 0 + ", " + df.format(processes[0].getWaitingTime()));
                     pThread.stop();
                     break;
                 }
