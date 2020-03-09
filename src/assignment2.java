@@ -54,6 +54,7 @@ class Assignment2 {
 }
 
     class Process implements Runnable {
+    /* Variables for process*/
         private int arrivalTime;
         private int burstTime;
         private float waitingTime = 0;
@@ -66,6 +67,7 @@ class Assignment2 {
         private float runTime = 0;
         private float timeToRun;
 
+        /* Constructor */
         Process(int arrivalTime, int burstTime) {
             this.arrivalTime = arrivalTime;
             this.burstTime = burstTime;
@@ -77,13 +79,15 @@ class Assignment2 {
             while (true) {
                 while (!hasCPU) Thread.onSpinWait();
                 timeToRun = Math.min(remainingTime, quantum);
-                time += timeToRun;
-                remainingTime -= timeToRun;
-                runTime += timeToRun;
-                hasCPU = false;
-                if (remainingTime <= 0) {
-                    waitingTime = (time - runTime - timeStart);
-                    isFinished = true;
+                time += timeToRun; // Time increments
+                remainingTime -= timeToRun; // Time ran deducted from time remaining for the process to execute
+                runTime += timeToRun; // Time to run (time process ran in quantum) added to total time ran
+
+                hasCPU = false; // Process relinquishes CPU back to the scheduler
+
+                if (remainingTime <= 0) { // If the process is done
+                    waitingTime = (time - runTime - timeStart); // Waiting time calculated
+                    isFinished = true; // Process signals to scheduler that it is done execution
                 }
             }
         }
@@ -135,6 +139,7 @@ class Assignment2 {
 
     class Scheduler implements Runnable {
 
+    /* Variables for scheduler */
         private Process[] processes;
         private int processNum;
         private float totalRemainingTime;
@@ -142,8 +147,10 @@ class Assignment2 {
         private float quantum;
         private int runningProcess;
 
+        /* Format outputs to 2 decimal places */
         private static DecimalFormat df = new DecimalFormat("0.00");
 
+        /* Constructor */
         Scheduler(Process[] processes, int processNum) {
             this.processes = processes;
             this.processNum = processNum;
@@ -152,6 +159,7 @@ class Assignment2 {
                 totalRemainingTime += processes[i].getBurstTime();
             }
 
+            /* Calculate quantum as 1/10th the total remaining time */
             quantum = totalRemainingTime / 10;
             System.out.println("Quantum: " + quantum); // Debug statement
         }
@@ -164,24 +172,42 @@ class Assignment2 {
         }
 
         void runProcess(Thread pThread) {
+            /* Code for when process is first run TODO move somewhere else */
+            // Time that process starts sent to the process
             processes[runningProcess].setTimeStart(time);
+            // Quantum time sent to the process
             processes[runningProcess].setQuantum(quantum);
+
+            // Process thread starts, will busy wait until given CPU access
             pThread.start();
             System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Started");
             while (true) {
+                // Process thread resumes
                 pThread.resume();
+
+                // Process' time (clock) updated with current time
                 processes[runningProcess].setTime(time);
                 System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Resumed");
+
+                // Process given CPU access, can now execute it's task
                 processes[runningProcess].setHasCPU(true);
+
+                // Until CPU given back to the scheduler, scheduler will wait
                 while (processes[runningProcess].getHasCPU()) Thread.onSpinWait();
+
+                // Once CPU given back to the scheduler, scheduler suspends the process
                 pThread.suspend();
+
+                // Global time incremented by the time the process ran for
                 time += processes[runningProcess].getTimeToRun();
                 System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Paused");
+
+                // If the process reports to the scheduler that it has finished it's execution
                 if (processes[runningProcess].getFinished()) {
                     System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Finished");
                     System.out.println("Waiting Time, Process " + (runningProcess + 1) + ", " + df.format(processes[runningProcess].getWaitingTime()));
-                    pThread.stop();
-                    break;
+                    pThread.stop(); // Process stopped
+                    break; // While loop breaks, process execution is finished
                 }
                 // Todo Add round robin scheduler code
             }
