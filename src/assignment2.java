@@ -64,6 +64,7 @@ class Assignment2 {
         private Boolean isFinished = false;
         private float quantum;
         private float runTime = 0;
+        private float timeToRun;
 
         Process(int arrivalTime, int burstTime) {
             this.arrivalTime = arrivalTime;
@@ -75,15 +76,20 @@ class Assignment2 {
         public void run() {
             while (true) {
                 while (!hasCPU) Thread.onSpinWait();
-                remainingTime -= quantum;
-                runTime += quantum;
+                if (remainingTime < quantum) {
+                    timeToRun = remainingTime;
+                }
+                else timeToRun = quantum;
+                try {
+                    TimeUnit.MILLISECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                timeNow += timeToRun;
+                remainingTime -= timeToRun;
+                runTime += timeToRun;
                 hasCPU = false;
                 if (remainingTime <= 0) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(2);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                     waitingTime = (timeNow - runTime - timeStart);
                     isFinished = true;
                 }
@@ -104,6 +110,14 @@ class Assignment2 {
 
         public int getArrivalTime() {
             return arrivalTime;
+        }
+
+        public float getTimeNow() {
+            return timeNow;
+        }
+
+        public Boolean getHasCPU() {
+            return hasCPU;
         }
 
         public void setHasCPU(Boolean hasCPU) {
@@ -130,6 +144,7 @@ class Assignment2 {
         private float totalRemainingTime;
         private float time = 0;
         private float quantum;
+        private int runningProcess;
 
         private static DecimalFormat df = new DecimalFormat("0.00");
 
@@ -142,37 +157,32 @@ class Assignment2 {
             }
 
             quantum = totalRemainingTime / 10;
-            System.out.println("Quantum: " + quantum);
+            System.out.println("Quantum: " + quantum); // Debug statement
         }
 
         @Override
         public void run() {
-            Thread pThread = new Thread(processes[0]);
-            time += 5.12;
+            runningProcess = 2;
+            Thread pThread = new Thread(processes[runningProcess]);
             runProcess(pThread);
         }
 
         void runProcess(Thread pThread) {
-            processes[0].setTimeStart(time);
+            processes[runningProcess].setTimeStart(time);
+            processes[runningProcess].setQuantum(quantum);
             pThread.start();
-            System.out.println("Time " + time + ", Process " + 0 + ", Started");
+            System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Started");
             while (true) {
                 pThread.resume();
-                System.out.println("Time " + time + ", Process " + 0 + ", Resumed");
-                processes[0].setQuantum(quantum);
-                processes[0].setHasCPU(true);
-                time += quantum;
-                processes[0].setTimeNow(time);
-                try {
-                    TimeUnit.MILLISECONDS.sleep(5);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Resumed");
+                processes[runningProcess].setHasCPU(true);
+                while (processes[runningProcess].getHasCPU()) Thread.onSpinWait();
                 pThread.suspend();
-                System.out.println("Time " + df.format(time) + ", Process " + 0 + ", Paused");
-                if (processes[0].getFinished()) {
-                    System.out.println("Time " + df.format(time) + ", Process " + 0 + ", Finished");
-                    System.out.println("Waiting Time, Process " + 0 + ", " + df.format(processes[0].getWaitingTime()));
+                time = processes[runningProcess].getTimeNow();
+                System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Paused");
+                if (processes[runningProcess].getFinished()) {
+                    System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Finished");
+                    System.out.println("Waiting Time, Process " + (runningProcess + 1) + ", " + df.format(processes[runningProcess].getWaitingTime()));
                     pThread.stop();
                     break;
                 }
