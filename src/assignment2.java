@@ -4,6 +4,7 @@
  */
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.text.DecimalFormat;
@@ -103,9 +104,6 @@ class Assignment2 {
         public float getWaitingTime() {
             return waitingTime;
         }
-        public int getBurstTime() {
-            return burstTime;
-        }
         public int getArrivalTime() {
             return arrivalTime;
         }
@@ -154,6 +152,8 @@ class Assignment2 {
         private int runningProcess;
         private PriorityQueue<Process> readyQueue;
         private Comparator<Process> remainingTimeCompare = new RemainingTimeComparator();
+        private float[] waitTimes;
+        private Boolean[] processFinished;
 
         /* Format outputs to 2 decimal places */
         private static DecimalFormat df = new DecimalFormat("0.00");
@@ -163,12 +163,16 @@ class Assignment2 {
             this.processes = processes;
             this.numProcesses = numProcesses;
             readyQueue = new PriorityQueue<>(numProcesses, remainingTimeCompare);
+            waitTimes = new float[numProcesses];
+            processFinished = new Boolean[numProcesses];
+            Arrays.fill(processFinished, false);
         }
 
         @Override
         public void run() {
             // Todo Add function that selects process to run
-            // Todo Add code for when they are all done (scan all the process until they are done (all finished == true))
+
+            // Todo Add code for when they are all done (for loop to check if all processDone are true)
 
             // Testing Priority Queue, making sure that smallest one is always in front
             readyQueue.add(processes[0]);
@@ -237,8 +241,8 @@ class Assignment2 {
             // If the process reports to the scheduler that it has finished it's execution
             if (process.getFinished()) {
                 System.out.println("Time " + df.format(time) + ", Process " + (process.getProcessNum() + 1) + ", Finished");
-                // Todo move the waiting time to the end (maybe make an array of size numProcesses and add have each index be waiting time of processNum - 1)
-                System.out.println("Waiting Time, Process " + process.getProcessNum() + ", " + df.format(process.getWaitingTime()));
+                waitTimes[process.getProcessNum()] = process.getWaitingTime();
+                processFinished[process.getProcessNum()] = true;
             }
             pThread.stop(); // Process stopped
         }
