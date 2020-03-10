@@ -76,7 +76,7 @@ class Assignment2 {
             this.burstTime = burstTime;
             this.remainingTime = burstTime;
             quantum = (float) 0.10 * burstTime;
-            this.processNum = processNum + 1;
+            this.processNum = processNum;
         }
 
         @Override
@@ -153,6 +153,7 @@ class Assignment2 {
         private float time = 0;
         private int runningProcess;
         private PriorityQueue<Process> readyQueue;
+        private Comparator<Process> remainingTimeCompare = new RemainingTimeComparator();
 
         /* Format outputs to 2 decimal places */
         private static DecimalFormat df = new DecimalFormat("0.00");
@@ -161,13 +162,34 @@ class Assignment2 {
         Scheduler(Process[] processes, int numProcesses) {
             this.processes = processes;
             this.numProcesses = numProcesses;
+            readyQueue = new PriorityQueue<>(numProcesses, remainingTimeCompare);
         }
 
         @Override
         public void run() {
             // Todo Add function that selects process to run
             // Todo Add code for when they are all done (scan all the process until they are done (all finished == true))
-            runProcess(processes[0]);
+
+            // Testing Priority Queue, making sure that smallest one is always in front
+            readyQueue.add(processes[0]);
+            readyQueue.add(processes[1]);
+            readyQueue.add(processes[2]);
+
+            for (Process item: readyQueue) {
+                System.out.println("Process " + item.getProcessNum() + ", Time Remaining " + item.getRemainingTime());
+            }
+
+            readyQueue.remove(processes[2]);
+            System.out.println("");
+            for (Process item: readyQueue) {
+                System.out.println("Process " + item.getProcessNum() + ", Time Remaining " + item.getRemainingTime());
+            }
+
+            readyQueue.remove(processes[1]);
+            System.out.println("");
+            for (Process item: readyQueue) {
+                System.out.println("Process " + item.getProcessNum() + ", Time Remaining " + item.getRemainingTime());
+            }
 
         }
 
@@ -186,7 +208,7 @@ class Assignment2 {
                 process.setTimeStart(time);
                 // Process knows that it has run
                 process.setHasRun(true);
-                System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Started");
+                System.out.println("Time " + df.format(time) + ", Process " + (process.getProcessNum() + 1) + ", Started");
             }
 
             Thread pThread = new Thread(process);
@@ -197,7 +219,7 @@ class Assignment2 {
 
             // Process' time (clock) updated with current time
             process.setTime(time);
-            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Resumed");
+            System.out.println("Time " + df.format(time) + ", Process " + (process.getProcessNum() + 1) + ", Resumed");
 
             // Process given CPU access, can now execute it's task
             process.setHasCPU(true);
@@ -210,11 +232,11 @@ class Assignment2 {
 
             // Global time incremented by the time the process ran for
             time += process.getTimeToRun();
-            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Paused");
+            System.out.println("Time " + df.format(time) + ", Process " + (process.getProcessNum() + 1) + ", Paused");
 
             // If the process reports to the scheduler that it has finished it's execution
             if (process.getFinished()) {
-                System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Finished");
+                System.out.println("Time " + df.format(time) + ", Process " + (process.getProcessNum() + 1) + ", Finished");
                 // Todo move the waiting time to the end (maybe make an array of size numProcesses and add have each index be waiting time of processNum - 1)
                 System.out.println("Waiting Time, Process " + process.getProcessNum() + ", " + df.format(process.getWaitingTime()));
             }
@@ -224,12 +246,13 @@ class Assignment2 {
 
 class RemainingTimeComparator implements Comparator<Process>{
 
+    @Override
     public int compare(Process p1, Process p2) {
         // If selected process has less time left than the one being compared
-        if (p1.getProcessNum() < p2.getProcessNum())
+        if (p1.getRemainingTime() < p2.getRemainingTime())
             return -1;
         // If selected process has more time left than the one being compared
-        else if (p1.getProcessNum() > p2.getProcessNum())
+        else if (p1.getRemainingTime() > p2.getRemainingTime())
             return 1;
         return 0; // If same times
     }
