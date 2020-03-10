@@ -5,8 +5,7 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
-import java.math.RoundingMode;
+import java.util.PriorityQueue;
 import java.text.DecimalFormat;
 
 class Assignment2 {
@@ -69,6 +68,7 @@ class Assignment2 {
         private float timeToRun;
         private Boolean hasRun = false;
         private int processNum;
+        private Boolean hasBeenAddedToQueue = false;
 
         /* Constructor */
         Process(int arrivalTime, int burstTime, int processNum) {
@@ -82,7 +82,7 @@ class Assignment2 {
         @Override
         public void run() {
             while (true) {
-                while (!hasCPU) Thread.onSpinWait();
+                while (!hasCPU || isFinished) Thread.onSpinWait();
                 timeToRun = Math.min(remainingTime, quantum);
                 time += timeToRun; // Time increments
                 remainingTime -= timeToRun; // Time ran deducted from time remaining for the process to execute
@@ -100,53 +100,48 @@ class Assignment2 {
         public Boolean getFinished() {
             return isFinished;
         }
-
         public float getWaitingTime() {
             return waitingTime;
         }
-
         public int getBurstTime() {
             return burstTime;
         }
-
         public int getArrivalTime() {
             return arrivalTime;
         }
-
         public float getTimeToRun() {
             return timeToRun;
         }
-
         public Boolean getHasCPU() {
             return hasCPU;
         }
-
         public Boolean getHasRun() {
             return hasRun;
         }
-
         public int getProcessNum() {
             return processNum;
         }
-
         public float getRemainingTime() {
             return remainingTime;
+        }
+        public Boolean getHasBeenAddedToQueue() {
+            return hasBeenAddedToQueue;
         }
 
         public void setHasCPU(Boolean hasCPU) {
             this.hasCPU = hasCPU;
         }
-
         public void setTimeStart(float timeStart) {
             this.timeStart = timeStart;
         }
-
         public void setTime(float time) {
             this.time = time;
         }
-
         public void setHasRun(Boolean hasRun) {
             this.hasRun = hasRun;
+        }
+        public void setHasBeenAddedToQueue(Boolean hasBeenAddedToQueue) {
+            this.hasBeenAddedToQueue = hasBeenAddedToQueue;
         }
     }
 
@@ -157,6 +152,7 @@ class Assignment2 {
         private int numProcesses;
         private float time = 0;
         private int runningProcess;
+        private PriorityQueue<Process> readyQueue;
 
         /* Format outputs to 2 decimal places */
         private static DecimalFormat df = new DecimalFormat("0.00");
@@ -169,11 +165,19 @@ class Assignment2 {
 
         @Override
         public void run() {
+            // Todo Add function that selects process to run
+            // Todo Add code for when they are all done (scan all the process until they are done (all finished == true))
             runProcess(processes[0]);
+
         }
 
-        void addToQueueBegin (Process process) {
-            // When time >= startTime, add the process to the queue
+        void addToQueueWhenArrivalTimeReached (Process[] processes) {
+            for (int i = 0; i < numProcesses; i++) {
+                if (processes[i].getArrivalTime() >= time && !processes[i].getHasBeenAddedToQueue()) {
+                    processes[i].setHasBeenAddedToQueue(true);
+                    readyQueue.add(processes[i]);
+                }
+            }
         }
 
         void runProcess(Process process) {
@@ -182,12 +186,12 @@ class Assignment2 {
                 process.setTimeStart(time);
                 // Process knows that it has run
                 process.setHasRun(true);
+                System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Started");
             }
 
             Thread pThread = new Thread(process);
             // Process thread starts, will busy wait until given CPU access
             pThread.start();
-            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Started");
             // Process thread resumes
             pThread.resume();
 
@@ -211,20 +215,22 @@ class Assignment2 {
             // If the process reports to the scheduler that it has finished it's execution
             if (process.getFinished()) {
                 System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Finished");
+                // Todo move the waiting time to the end (maybe make an array of size numProcesses and add have each index be waiting time of processNum - 1)
                 System.out.println("Waiting Time, Process " + process.getProcessNum() + ", " + df.format(process.getWaitingTime()));
             }
             pThread.stop(); // Process stopped
-            // Todo Add round robin scheduler code
         }
     }
 
-class Comparitor implements Comparator<Process>{
+class RemainingTimeComparator implements Comparator<Process>{
 
     public int compare(Process p1, Process p2) {
+        // If selected process has less time left than the one being compared
         if (p1.getProcessNum() < p2.getProcessNum())
             return -1;
-        else if (p1.getProcessNum() > p2.getProcessNum()) // If
+        // If selected process has more time left than the one being compared
+        else if (p1.getProcessNum() > p2.getProcessNum())
             return 1;
-        return 0; // If same
+        return 0; // If same times
     }
 }
