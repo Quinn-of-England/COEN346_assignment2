@@ -4,6 +4,7 @@
  */
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -27,7 +28,7 @@ class Assignment2 {
             String[] split = inProcesses.get(i).split(" ");
             int arrivalTime = Integer.parseInt(split[0]);
             int burstTime = Integer.parseInt(split[1]);
-            Process p = new Process(arrivalTime, burstTime);
+            Process p = new Process(arrivalTime, burstTime, i);
             processes[i] = p;
         }
 
@@ -66,12 +67,16 @@ class Assignment2 {
         private float quantum;
         private float runTime = 0;
         private float timeToRun;
+        private Boolean hasRun = false;
+        private int processNum;
 
         /* Constructor */
-        Process(int arrivalTime, int burstTime) {
+        Process(int arrivalTime, int burstTime, int processNum) {
             this.arrivalTime = arrivalTime;
             this.burstTime = burstTime;
             this.remainingTime = burstTime;
+            quantum = (float) 0.10 * burstTime;
+            this.processNum = processNum + 1;
         }
 
         @Override
@@ -108,16 +113,24 @@ class Assignment2 {
             return arrivalTime;
         }
 
-        public float getTime() {
-            return time;
-        }
-
         public float getTimeToRun() {
             return timeToRun;
         }
 
         public Boolean getHasCPU() {
             return hasCPU;
+        }
+
+        public Boolean getHasRun() {
+            return hasRun;
+        }
+
+        public int getProcessNum() {
+            return processNum;
+        }
+
+        public float getRemainingTime() {
+            return remainingTime;
         }
 
         public void setHasCPU(Boolean hasCPU) {
@@ -132,8 +145,8 @@ class Assignment2 {
             this.time = time;
         }
 
-        public void setQuantum(float quantum) {
-            this.quantum = quantum;
+        public void setHasRun(Boolean hasRun) {
+            this.hasRun = hasRun;
         }
     }
 
@@ -141,75 +154,77 @@ class Assignment2 {
 
     /* Variables for scheduler */
         private Process[] processes;
-        private int processNum;
-        private float totalRemainingTime;
+        private int numProcesses;
         private float time = 0;
-        private float quantum;
         private int runningProcess;
 
         /* Format outputs to 2 decimal places */
         private static DecimalFormat df = new DecimalFormat("0.00");
 
         /* Constructor */
-        Scheduler(Process[] processes, int processNum) {
+        Scheduler(Process[] processes, int numProcesses) {
             this.processes = processes;
-            this.processNum = processNum;
-
-            for (int i = 0; i < processNum; i++) {
-                totalRemainingTime += processes[i].getBurstTime();
-            }
-
-            /* Calculate quantum as 1/10th the total remaining time */
-            quantum = totalRemainingTime / 10;
-            System.out.println("Quantum: " + quantum); // Debug statement
+            this.numProcesses = numProcesses;
         }
 
         @Override
         public void run() {
-            runningProcess = 0;
-            Thread pThread = new Thread(processes[runningProcess]);
-            runProcess(pThread);
+            runProcess(processes[0]);
         }
 
-        void runProcess(Thread pThread) {
-            /* Code for when process is first run TODO move somewhere else */
-            // Time that process starts sent to the process
-            processes[runningProcess].setTimeStart(time);
-            // Quantum time sent to the process
-            processes[runningProcess].setQuantum(quantum);
+        void addToQueueBegin (Process process) {
+            // When time >= startTime, add the process to the queue
+        }
 
+        void runProcess(Process process) {
+            if (!process.getHasRun()) {
+                // Time that process starts sent to the process
+                process.setTimeStart(time);
+                // Process knows that it has run
+                process.setHasRun(true);
+            }
+
+            Thread pThread = new Thread(process);
             // Process thread starts, will busy wait until given CPU access
             pThread.start();
-            System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Started");
-            while (true) {
-                // Process thread resumes
-                pThread.resume();
+            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Started");
+            // Process thread resumes
+            pThread.resume();
 
-                // Process' time (clock) updated with current time
-                processes[runningProcess].setTime(time);
-                System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Resumed");
+            // Process' time (clock) updated with current time
+            process.setTime(time);
+            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Resumed");
 
-                // Process given CPU access, can now execute it's task
-                processes[runningProcess].setHasCPU(true);
+            // Process given CPU access, can now execute it's task
+            process.setHasCPU(true);
 
-                // Until CPU given back to the scheduler, scheduler will wait
-                while (processes[runningProcess].getHasCPU()) Thread.onSpinWait();
+            // Until CPU given back to the scheduler, scheduler will wait
+            while (process.getHasCPU()) Thread.onSpinWait();
 
-                // Once CPU given back to the scheduler, scheduler suspends the process
-                pThread.suspend();
+            // Once CPU given back to the scheduler, scheduler suspends the process
+            pThread.suspend();
 
-                // Global time incremented by the time the process ran for
-                time += processes[runningProcess].getTimeToRun();
-                System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Paused");
+            // Global time incremented by the time the process ran for
+            time += process.getTimeToRun();
+            System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Paused");
 
-                // If the process reports to the scheduler that it has finished it's execution
-                if (processes[runningProcess].getFinished()) {
-                    System.out.println("Time " + df.format(time) + ", Process " + (runningProcess + 1) + ", Finished");
-                    System.out.println("Waiting Time, Process " + (runningProcess + 1) + ", " + df.format(processes[runningProcess].getWaitingTime()));
-                    pThread.stop(); // Process stopped
-                    break; // While loop breaks, process execution is finished
-                }
-                // Todo Add round robin scheduler code
+            // If the process reports to the scheduler that it has finished it's execution
+            if (process.getFinished()) {
+                System.out.println("Time " + df.format(time) + ", Process " + process.getProcessNum() + ", Finished");
+                System.out.println("Waiting Time, Process " + process.getProcessNum() + ", " + df.format(process.getWaitingTime()));
             }
+            pThread.stop(); // Process stopped
+            // Todo Add round robin scheduler code
         }
     }
+
+class Comparitor implements Comparator<Process>{
+
+    public int compare(Process p1, Process p2) {
+        if (p1.getProcessNum() < p2.getProcessNum())
+            return -1;
+        else if (p1.getProcessNum() > p2.getProcessNum()) // If
+            return 1;
+        return 0; // If same
+    }
+}
