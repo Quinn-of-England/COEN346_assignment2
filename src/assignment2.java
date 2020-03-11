@@ -30,7 +30,7 @@ class Assignment2 {
             Process p = new Process(arrivalTime, burstTime);
             processes[i] = p;
         }
-
+        
         Scheduler taskScheduler = new Scheduler(processes, processNum);
         Thread schedulerThread = new Thread(taskScheduler);
         schedulerThread.start();
