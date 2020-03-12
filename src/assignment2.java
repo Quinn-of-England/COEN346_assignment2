@@ -11,7 +11,7 @@ import java.text.DecimalFormat;
 
 class Assignment2 {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException{
         if (args.length != 1) { // Checks if arg is present, will exit if not correct (file name/path passed from args[0])
             System.err.println("You must pass the input file name");
             System.exit(0);
@@ -31,7 +31,8 @@ class Assignment2 {
             Process p = new Process(arrivalTime, burstTime, i);
             processes[i] = p;
         }
-        
+        PrintStream output = new PrintStream(new File("output.txt"));
+        System.setOut(output); 
         Scheduler taskScheduler = new Scheduler(processes, processNum);
         Thread schedulerThread = new Thread(taskScheduler);
         schedulerThread.start();
@@ -179,7 +180,7 @@ class Assignment2 {
             readyQueue.add(processes[1]);
             readyQueue.add(processes[2]);
 
-            for (Process item: readyQueue) {
+            for (Process item: readyQueue) { 
                 System.out.println("Process " + item.getProcessNum() + ", Time Remaining " + item.getRemainingTime());
             }
 
